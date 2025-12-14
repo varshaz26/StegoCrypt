@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StegoCrypt: Image & Text Steganography</title>
+    <style>
+        body {
+            background: linear-gradient(to right, #eef2f3, #8e9eab);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            background: linear-gradient(to right, #005792, #0097b2);
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="file"], textarea {
+            display: block;
+            margin: 10px 0 20px;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        button {
+            background: #ff5e62;
+            background: linear-gradient(to right, #ff9966, #ff5e62);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #ff512f, #dd2476);
+        }
+
+        .images-section, .metrics-section, .decrypted-section {
+            margin-top: 40px;
+        }
+
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .box {
+            flex: 1;
+            min-width: 280px;
+            padding: 10px;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 3px solid #ddd;
+            transition: transform 0.3s ease;
+        }
+
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .metrics-table th, .metrics-table td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metrics-table th {
+            background: #f2faff;
+        }
+
+        .flash {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+
+        .download-link:hover {
+            background: #218838;
+        }
+
+        h2 {
+            color: #005792;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>StegoCrypt - Secure Image & Text Embedding</h1>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="/" method="post" enctype="multipart/form-data" class="form-section">
+            <label>Upload <b>Cover Image</b>:</label>
+            <input type="file" name="image1" required>
+
+            <label>Upload <b>Secret Image</b> (optional):</label>
+            <input type="file" name="image2">
+
+            <label>Enter <b>Secret Text</b> (optional):</label>
+            <textarea name="secret_text" placeholder="Enter your secret message here..."></textarea>
+
+            <button type="submit">Embed</button>
+        </form>
+
+        {% if original1 %}
+        <div class="images-section">
+            <h2>Original Images</h2>
+            <div class="flex">
+                <div class="box">
+                    <h4>Cover Image</h4>
+                    <img src="{{ url_for('uploaded_file', filename=original1) }}">
+                </div>
+                {% if original2 %}
+                <div class="box">
+                    <h4>Secret Image</h4>
+                    <img src="{{ url_for('uploaded_file', filename=original2) }}">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if merged %}
+        <div class="images-section">
+            <h2>Stego Image (Embedded)</h2>
+            <img src="{{ url_for('uploaded_file', filename=merged) }}">
+            <a class="download-link" href="{{ url_for('uploaded_file', filename=encrypted) }}" download>Download Encrypted Image</a>
+        </div>
+        {% endif %}
+
+        {% if zpattern %}
+        <div class="images-section">
+            <h2>Z-Pattern Embedding Visualization</h2>
+            <img src="{{ url_for('uploaded_file', filename=zpattern) }}">
+        </div>
+        {% endif %}
+
+        {% if metrics %}
+        <div class="metrics-section">
+            <h2>Embedding Quality Metrics</h2>
+            <table class="metrics-table">
+                <tr>
+                    <th>PSNR</th>
+                    <th>SSIM</th>
+                    <th>SNR</th>
+                    <th>BPP</th>
+                </tr>
+                <tr>
+                    <td>{{ metrics.psnr }}</td>
+                    <td>{{ metrics.ssim }}</td>
+                    <td>{{ metrics.snr }}</td>
+                    <td>{{ metrics.bpp }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <form action="/decrypt" method="POST">
+            <button type="submit">Decrypt & Extract</button>
+        </form>
+
+        {% if decrypted %}
+        <div class="decrypted-section">
+            <h2>Extracted Secret Image</h2>
+            <img src="{{ url_for('uploaded_file', filename=decrypted) }}">
+        </div>
+        {% endif %}
+
+        {% if extracted_text %}
+        <div class="decrypted-section">
+            <h2>Extracted Secret Text</h2>
+            <p>{{ extracted_text }}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
